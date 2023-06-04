@@ -1,40 +1,47 @@
 import * as THREE from 'three';
 
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-			// import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-			let mixer;
 
-			let spotLight;
+			import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+			import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+			import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+			import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+
+
 
 			const clock = new THREE.Clock();
 			const container = document.getElementById( 'container' );
+			let composer;
 
 			const renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.shadowMap.enabled = true;
+
 			
 			container.appendChild( renderer.domElement );
 
-			const pmremGenerator = new THREE.PMREMGenerator( renderer );
-
 			const scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0x222222 );
-			// scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture
-			scene.fog = new THREE.FogExp2( 0x222222, 0.02 );
+			scene.fog = new THREE.Fog( 0x222222, 20, 25 );
 
-			const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 100 );
-			camera.position.set( 5, 2, 8 );
+
+			const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, .1, 50);
+			camera.position.set(-9, 1, -2);
+			
 
 			const controls = new OrbitControls( camera, renderer.domElement );
 			controls.target.set( 0, 0.5, 0 );
 			controls.update();
 			controls.enablePan = false;
 			controls.enableDamping = true;
+			controls.minDistance = 4;
+			controls.maxDistance = 30;
 
 			const dracoLoader = new DRACOLoader();
 			dracoLoader.setDecoderPath( 'jsm/libs/draco/gltf/' );
@@ -48,7 +55,6 @@ import * as THREE from 'three';
 				const model = gltf.scene;
 				model.position.set( 0, -1, 0 );
 				model.scale.set( 0.16, 0.16, 0.16);
-				model.receiveShadow = true;
 				scene.add( model );
 
 				model.traverse( function ( object ) {
@@ -70,9 +76,22 @@ import * as THREE from 'three';
 
 			} );
 
+			const renderScene = new RenderPass( scene, camera );
+
+			const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+			bloomPass.threshold = .1;
+			bloomPass.strength = .2,
+			bloomPass.radius = .03;
+
+			const outputPass = new OutputPass( THREE.ReinhardToneMapping );
+
+			composer = new EffectComposer( renderer );
+			composer.addPass( renderScene );
+			composer.addPass( bloomPass );
+			composer.addPass( outputPass );
 
 
-			const dirLight = new THREE.DirectionalLight( 0xffddde , 7);
+			const dirLight = new THREE.DirectionalLight( 0xffddde , 12);
 			
 				dirLight.position.set( -4, 8, 10);
 				dirLight.castShadow = true;
@@ -82,15 +101,24 @@ import * as THREE from 'three';
 				dirLight.shadow.mapSize.height = 1024;
 				scene.add( dirLight );
 
+			
 			scene.add( new THREE.HemisphereLight( 0xffddde, 0x785099, .3 ));
 
 
 			window.onresize = function () {
 
-				camera.aspect = window.innerWidth / window.innerHeight;
+				const width = window.innerWidth;
+				const height = window.innerHeight;
+
+				camera.aspect = width / height;
 				camera.updateProjectionMatrix();
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setSize( width, height );
+
+				bloomComposer.setSize( width, height );
+				composer.setSize( width, height );
+
+				render();
 
 			};
 
@@ -99,11 +127,8 @@ import * as THREE from 'three';
 
 				requestAnimationFrame( animate );
 
-				const delta = clock.getDelta();
-
 				controls.update();
-
-				renderer.render( scene, camera );
+				composer.render( scene, camera );
 
 			}
 
