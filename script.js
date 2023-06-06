@@ -28,7 +28,7 @@ import * as THREE from 'three';
 
 			const scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0x222222 );
-			scene.fog = new THREE.Fog( 0x222222, 20, 25 );
+			scene.fog = new THREE.Fog( 0x444444, 15, 25 );
 
 
 			const camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, .1, 50);
@@ -50,7 +50,7 @@ import * as THREE from 'three';
 			loader.setDRACOLoader( dracoLoader );
 
 
-			loader.load( 'models/simpleHarryPotterHouse.glb', function ( gltf ) {
+			loader.load( 'models/cabin.glb', function ( gltf ) {
 
 				const model = gltf.scene;
 				model.position.set( 0, -1, 0 );
