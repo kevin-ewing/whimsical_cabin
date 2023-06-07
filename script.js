@@ -50,6 +50,8 @@ import * as THREE from 'three';
 			loader.setDRACOLoader( dracoLoader );
 
 
+			var loadingDiv = document.getElementById("loadingDiv");
+
 			loader.load( 'models/cabin.glb', function ( gltf ) {
 
 				const model = gltf.scene;
@@ -65,7 +67,7 @@ import * as THREE from 'three';
 					}
 
 
-
+				loadingDiv.classList.add("hidden");
 				} );
 
 				animate();
